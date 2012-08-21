@@ -9,6 +9,9 @@
     <!-- Property that enables building a package from a project -->
     <BuildPackage Condition=" '$(BuildPackage)' == '' ">false</BuildPackage>
 
+    <!-- Determines if package restore consent is required to restore packages -->
+    <RequireRestoreConsent Condition=" '$(RequireRestoreConsent)' != 'false' ">true</RequireRestoreConsent>
+        
     <!-- Download NuGet.exe if it does not already exist -->
     <DownloadNuGetExe Condition=" '$(DownloadNuGetExe)' == '' ">false</DownloadNuGetExe>
   </PropertyGroup>
@@ -49,9 +52,10 @@
 
     <NuGetSpec>$(NuGetSpecPath)\$(ProjectName).nuspec</NuGetSpec>
     <PackageBaseDir>$(TargetDir.Trim('\\'))</PackageBaseDir>
-
+        
+    <RequireConsentSwitch Condition=" $(RequireRestoreConsent) == 'true' ">-RequireConsent</RequireConsentSwitch>
     <!-- Commands -->
-    <RestoreCommand>$(NuGetCommand) install "$(PackagesConfig)" -source "$(PackageSources)" -o "$(PackagesDir)"</RestoreCommand>
+    <RestoreCommand>$(NuGetCommand) install "$(PackagesConfig)" -source "$(PackageSources)"  $(RequireConsentSwitch) -o "$(PackagesDir)"</RestoreCommand>
     <BuildCommand>$(NuGetCommand) pack "$(NuGetSpec)" -p Configuration=$(Configuration) -o "$(PackageOutputDir)" -base "$(PackageBaseDir)"</BuildCommand>
 
     <!-- Make the build depend on restore packages -->
