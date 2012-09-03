@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\</SolutionDir>
+    <SolutionDir Condition=" '$(SolutionDir)' == '' Or '$(SolutionDir)' == '*Undefined*' ">$(MSBuildProjectDirectory)\..\</SolutionDir>
 
     <!-- Enable the restore command to run before builds -->
-    <RestorePackages Condition="  '$(RestorePackages)' == '' ">false</RestorePackages>
+    <RestorePackages Condition=" '$(RestorePackages)' == '' ">false</RestorePackages>
 
     <!-- Property that enables building a package from a project -->
     <BuildPackage Condition=" '$(BuildPackage)' == '' ">false</BuildPackage>
@@ -24,7 +24,7 @@
         -->
   </ItemGroup>
 
-    <PropertyGroup Condition=" '$(OS)' == 'Windows_NT'">
+  <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
     <!-- Windows specific commands -->
     <NuGetToolsPath>$([System.IO.Path]::Combine($(SolutionDir), ".nuget"))</NuGetToolsPath>
     <PackagesConfig>$([System.IO.Path]::Combine($(ProjectDir), "packages.config"))</PackagesConfig>
@@ -32,7 +32,7 @@
     <NuGetSpecPath>$([System.IO.Path]::Combine($(ProjectDir), "_nuget"))</NuGetSpecPath>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT'">
+  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
     <!-- We need to launch nuget.exe with the mono command if we're not on windows -->
     <NuGetToolsPath>$(SolutionDir).nuget</NuGetToolsPath>
     <PackagesConfig>packages.config</PackagesConfig>
@@ -43,29 +43,30 @@
   <PropertyGroup>
     <!-- NuGet command -->
     <NuGetExePath Condition=" '$(NuGetExePath)' == '' ">$(NuGetToolsPath)\nuget.exe</NuGetExePath>
-    <PackageSources Condition=" $(PackageSources) == '' ">@(PackageSource)</PackageSources>
+    <PackageSources Condition=" '$(PackageSources)' == '' ">@(PackageSource)</PackageSources>
 
-    <NuGetCommand Condition=" '$(OS)' == 'Windows_NT'">"$(NuGetExePath)"</NuGetCommand>
+    <NuGetCommand Condition=" '$(OS)' == 'Windows_NT' ">"$(NuGetExePath)"</NuGetCommand>
     <NuGetCommand Condition=" '$(OS)' != 'Windows_NT' ">mono --runtime=v4.0.30319 $(NuGetExePath)</NuGetCommand>
 
-    <PackageOutputDir Condition="$(PackageOutputDir) == ''">$([System.IO.Path]::Combine($(SolutionDir), "..\packages\$(Configuration)"))</PackageOutputDir>
+    <PackageOutputDir Condition="$(PackageOutputDir) == ''">$(SystemDrive)\packages</PackageOutputDir>
 
     <NuGetSpec>$(NuGetSpecPath)\$(ProjectName).nuspec</NuGetSpec>
     <PackageBaseDir>$(TargetDir.Trim('\\'))</PackageBaseDir>
         
     <RequireConsentSwitch Condition=" $(RequireRestoreConsent) == 'true' ">-RequireConsent</RequireConsentSwitch>
+    
     <!-- Commands -->
     <RestoreCommand>$(NuGetCommand) install "$(PackagesConfig)" -source "$(PackageSources)"  $(RequireConsentSwitch) -o "$(PackagesDir)"</RestoreCommand>
     <BuildCommand>$(NuGetCommand) pack "$(NuGetSpec)" -p Configuration=$(Configuration) -o "$(PackageOutputDir)" -base "$(PackageBaseDir)"</BuildCommand>
 
     <!-- Make the build depend on restore packages -->
-    <BuildDependsOn Condition="$(RestorePackages) == 'true'">
+    <BuildDependsOn Condition=" $(RestorePackages) == 'true' ">
       RestorePackages;
       $(BuildDependsOn);
     </BuildDependsOn>
 
     <!-- Make the build depend on restore packages -->
-    <BuildDependsOn Condition="$(BuildPackage) == 'true'">
+    <BuildDependsOn Condition=" $(BuildPackage) == 'true' ">
       $(BuildDependsOn);
       BuildPackage;
     </BuildDependsOn>
@@ -73,35 +74,35 @@
 
   <Target Name="CheckPrerequisites">
     <!-- Raise an error if we're unable to locate nuget.exe  -->
-    <Error Condition="'$(DownloadNuGetExe)' != 'true' AND !Exists('$(NuGetExePath)')" Text="Unable to locate '$(NuGetExePath)'" />
+    <Error Condition=" '$(DownloadNuGetExe)' != 'true' AND !Exists('$(NuGetExePath)') " Text="Unable to locate '$(NuGetExePath)'" />
     <SetEnvironmentVariable EnvKey="VisualStudioVersion" EnvValue="$(VisualStudioVersion)" Condition=" '$(VisualStudioVersion)' != '' AND '$(OS)' == 'Windows_NT' " />
-        <!--
-        Take advantage of MsBuild's build dependency tracking to make sure that we only ever download nuget.exe once.
-        This effectively acts as a lock that makes sure that the download operation will only happen once and all
-        parallel builds will have to wait for it to complete.
-        -->
-        <MsBuild Targets="_DownloadNuGet" Projects="$(MSBuildThisFileFullPath)" Properties="Configuration=NOT_IMPORTANT" />
-    </Target>
+    <!--
+    Take advantage of MsBuild's build dependency tracking to make sure that we only ever download nuget.exe once.
+    This effectively acts as a lock that makes sure that the download operation will only happen once and all
+    parallel builds will have to wait for it to complete.
+    -->
+    <MsBuild Targets="_DownloadNuGet" Projects="$(MSBuildThisFileFullPath)" Properties="Configuration=NOT_IMPORTANT" />
+  </Target>
 
-    <Target Name="_DownloadNuGet">
-    <DownloadNuGet OutputFilename="$(NuGetExePath)" Condition=" '$(DownloadNuGetExe)' == 'true' AND !Exists('$(NuGetExePath)')"  />
+  <Target Name="_DownloadNuGet">
+    <DownloadNuGet OutputFilename="$(NuGetExePath)" Condition=" '$(DownloadNuGetExe)' == 'true' AND !Exists('$(NuGetExePath)') " />
   </Target>
 
   <Target Name="RestorePackages" DependsOnTargets="CheckPrerequisites">
     <Exec Command="$(RestoreCommand)"
-          Condition="'$(OS)' != 'Windows_NT' And Exists('$(PackagesConfig)')" />
+          Condition=" '$(OS)' != 'Windows_NT' And Exists('$(PackagesConfig)') " />
 
     <Exec Command="$(RestoreCommand)"
           LogStandardErrorAsError="true"
-          Condition="'$(OS)' == 'Windows_NT' And Exists('$(PackagesConfig)')" />
+          Condition=" '$(OS)' == 'Windows_NT' And Exists('$(PackagesConfig)') " />
   </Target>
 
   <Target Name="BuildPackage" DependsOnTargets="CheckPrerequisites">
     <!-- Create the output directory for nuget package and nuspec file -->
-    <MakeDir Directories="$(PackageOutputDir)" Condition="Exists('$(NuGetSpec)')" />
+    <MakeDir Directories="$(PackageOutputDir)" ContinueOnError="false" />
 
     <!-- Copy the .tmp file if .xml does not exist see: http://connect.microsoft.com/VisualStudio/feedback/details/470485/strange-file-not-found-error-xml-documentation-file-renamed-during-incremental-build -->
-    <Exec Condition="!Exists('$(TargetDir)$(TargetName).xml')" Command="copy &quot;$(TargetDir)*.tmp&quot; &quot;$(TargetDir)$(TargetName).xml&quot;" />
+    <Exec Condition=" !Exists('$(TargetDir)$(TargetName).xml') " Command="copy &quot;$(TargetDir)*.tmp&quot; &quot;$(TargetDir)$(TargetName).xml&quot;" />
     <Exec Command="del &quot;$(TargetDir)*.tmp&quot;" />
 
     <Exec Command="$(BuildCommand)"
